@@ -184,16 +184,16 @@
 
             <label class="field">
               <span>活动区域</span>
-              <select name="campusArea" required>
-                <option value="图书馆周边">图书馆周边</option>
-                <option value="食堂周边">食堂周边</option>
-                <option value="宿舍区">宿舍区</option>
-                <option value="教学楼">教学楼</option>
-                <option value="体育馆">体育馆</option>
-                <option value="湖畔步道">湖畔步道</option>
-                <option value="校门附近">校门附近</option>
-                <option value="其他">其他</option>
-              </select>
+              <input type="text" name="campusArea" list="campusAreaSuggestions" placeholder="如：图书馆东侧、湖畔步道" required maxlength="32" />
+              <datalist id="campusAreaSuggestions">
+                <option value="图书馆周边"></option>
+                <option value="食堂周边"></option>
+                <option value="宿舍区"></option>
+                <option value="教学楼"></option>
+                <option value="体育馆"></option>
+                <option value="湖畔步道"></option>
+                <option value="校门附近"></option>
+              </datalist>
             </label>
 
             <label class="field">

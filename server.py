@@ -150,8 +150,16 @@ def db_connect():
 def init_db():
     DATA_DIR.mkdir(parents=True, exist_ok=True)
     with db_connect() as db:
+        cats_table_exists = (
+            db.execute("SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = 'cats'").fetchone() is not None
+        )
         db.executescript(
             """
+            CREATE TABLE IF NOT EXISTS app_meta (
+                key TEXT PRIMARY KEY,
+                value TEXT NOT NULL
+            );
+
             CREATE TABLE IF NOT EXISTS cats (
                 id TEXT PRIMARY KEY,
                 registry_no TEXT NOT NULL UNIQUE,
@@ -220,10 +228,15 @@ def init_db():
             """
         )
 
+        sample_seeded = db.execute("SELECT value FROM app_meta WHERE key = 'sample_seeded'").fetchone()
         count = db.execute("SELECT COUNT(*) FROM cats").fetchone()[0]
-        if count == 0:
+        if not sample_seeded and not cats_table_exists and count == 0:
             for cat in SAMPLE_CATS:
                 insert_cat(db, cat, "", "")
+        if not sample_seeded:
+            db.execute(
+                "INSERT OR REPLACE INTO app_meta (key, value) VALUES ('sample_seeded', 'true')"
+            )
 
 
 def clean_text(value, max_length, required=False, field_name="字段"):
@@ -781,6 +794,9 @@ class RegistryHandler(BaseHTTPRequestHandler):
             db.execute("DELETE FROM cats")
             for cat in SAMPLE_CATS:
                 insert_cat(db, cat, user["studentId"], user["name"])
+            db.execute(
+                "INSERT OR REPLACE INTO app_meta (key, value) VALUES ('sample_seeded', 'true')"
+            )
             record_log(db, "restore_samples", str(len(SAMPLE_CATS)), user, self.client_ip(), self.user_agent())
             cats = list_cats(db)
         self.send_json(HTTPStatus.OK, {"cats": cats})

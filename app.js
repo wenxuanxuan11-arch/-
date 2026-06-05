@@ -29,6 +29,7 @@ const grid = document.querySelector("#catGrid");
 const emptyState = document.querySelector("#emptyState");
 const searchInput = document.querySelector("#searchInput");
 const areaFilter = document.querySelector("#areaFilter");
+const campusAreaSuggestions = document.querySelector("#campusAreaSuggestions");
 const statusFilter = document.querySelector("#statusFilter");
 const careFilter = document.querySelector("#careFilter");
 const resultText = document.querySelector("#resultText");
@@ -217,11 +218,16 @@ function fillAreaFilter() {
   const selected = areaFilter.value || "all";
   const knownAreas = Array.from(new Set([...areaOptions, ...cats.map((cat) => cat.campusArea).filter(Boolean)]));
   areaFilter.innerHTML = '<option value="all">全部区域</option>';
+  campusAreaSuggestions.innerHTML = "";
   knownAreas.forEach((area) => {
     const option = document.createElement("option");
     option.value = area;
     option.textContent = area;
     areaFilter.append(option);
+
+    const suggestion = document.createElement("option");
+    suggestion.value = area;
+    campusAreaSuggestions.append(suggestion);
   });
   areaFilter.value = knownAreas.includes(selected) ? selected : "all";
 }
