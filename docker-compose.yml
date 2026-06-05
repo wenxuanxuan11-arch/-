@@ -1,0 +1,27 @@
+services:
+  cat-registry:
+    build:
+      context: .
+      dockerfile: Dockerfile.local
+    container_name: wanjiang-cat-registry
+    restart: unless-stopped
+    ports:
+      - "${SITE_PORT:-8080}:8080"
+    environment:
+      ADMIN_STUDENT_ID: "${ADMIN_STUDENT_ID}"
+      ADMIN_NAME: "${ADMIN_NAME}"
+      SESSION_DAYS: "${SESSION_DAYS:-7}"
+      DATA_DIR: /data
+      TZ: Asia/Shanghai
+    volumes:
+      - ./data:/data
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8080/api/health', timeout=3)"
+      interval: 20s
+      timeout: 5s
+      retries: 5
+      start_period: 10s

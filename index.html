@@ -1,0 +1,406 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>皖江工学院校园小猫户口收录系统</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <section class="login-screen" id="loginScreen">
+      <div class="login-image" aria-hidden="true"></div>
+      <div class="login-shade" aria-hidden="true"></div>
+      <form class="login-panel" id="loginForm">
+        <div class="login-brand">
+          <div class="school-seal" aria-hidden="true">皖</div>
+          <div>
+            <p class="school-name">皖江工学院</p>
+            <h1>校园小猫户口收录系统</h1>
+          </div>
+        </div>
+
+        <div class="login-copy">
+          <p class="eyebrow">校园地标档案库</p>
+          <p>请输入学号和姓名进入系统。普通用户可以查看小猫档案，管理员可以维护档案并查看访问统计。</p>
+        </div>
+
+        <label class="login-field">
+          <span>学号</span>
+          <input id="loginStudentId" name="studentId" type="text" inputmode="numeric" autocomplete="username" required maxlength="32" />
+        </label>
+
+        <label class="login-field">
+          <span>姓名</span>
+          <input id="loginName" name="name" type="text" autocomplete="name" required maxlength="32" />
+        </label>
+
+        <p class="login-error" id="loginError" role="alert" hidden></p>
+
+        <button class="login-button" type="submit" id="loginButton">
+          <span class="icon" data-icon="login" aria-hidden="true"></span>
+          <span>进入系统</span>
+        </button>
+      </form>
+    </section>
+
+    <div class="app-shell" id="appShell" hidden>
+      <header class="campus-banner">
+        <div class="banner-image" aria-hidden="true"></div>
+        <div class="banner-shade" aria-hidden="true"></div>
+
+        <div class="banner-content">
+          <div class="topbar">
+            <div class="brand">
+              <div class="school-seal" aria-hidden="true">皖</div>
+              <div>
+                <p class="school-name">皖江工学院</p>
+                <h1>校园小猫户口收录系统</h1>
+              </div>
+            </div>
+
+            <div class="header-actions">
+              <button class="tool-button light" type="button" id="adminBtn" data-admin-only title="访问统计">
+                <span class="icon" data-icon="chart" aria-hidden="true"></span>
+                <span>访问统计</span>
+              </button>
+              <button class="tool-button light" type="button" id="exportBtn" data-admin-only title="导出档案">
+                <span class="icon" data-icon="download" aria-hidden="true"></span>
+                <span>导出</span>
+              </button>
+              <label class="tool-button light import-button" data-admin-only title="导入档案">
+                <span class="icon" data-icon="upload" aria-hidden="true"></span>
+                <span>导入</span>
+                <input type="file" id="importInput" accept="application/json" />
+              </label>
+              <button class="tool-button light" type="button" id="sampleBtn" data-admin-only title="恢复示例数据">
+                <span class="icon" data-icon="refresh" aria-hidden="true"></span>
+                <span>示例</span>
+              </button>
+              <div class="user-chip">
+                <span class="user-role" id="userRole">访客</span>
+                <span class="user-name" id="userName"></span>
+              </div>
+              <button class="icon-button light-icon" type="button" id="logoutBtn" title="退出登录" aria-label="退出登录">
+                <span class="icon" data-icon="logout" aria-hidden="true"></span>
+              </button>
+            </div>
+          </div>
+
+          <div class="banner-bottom">
+            <div>
+              <p class="eyebrow">校园地标档案库</p>
+              <p class="intro">记录小猫身份、活动点位、健康护理和联系人，让校园照护更清楚。</p>
+            </div>
+
+            <div class="stats-row" aria-label="档案统计">
+              <section class="stat-tile">
+                <span class="stat-value" id="totalCount">0</span>
+                <span class="stat-label">已收录</span>
+              </section>
+              <section class="stat-tile">
+                <span class="stat-value" id="sterilizedCount">0</span>
+                <span class="stat-label">已绝育</span>
+              </section>
+              <section class="stat-tile">
+                <span class="stat-value" id="watchCount">0</span>
+                <span class="stat-label">需关注</span>
+              </section>
+              <section class="stat-tile">
+                <span class="stat-value" id="areaCount">0</span>
+                <span class="stat-label">活动点</span>
+              </section>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <main class="workspace">
+        <aside class="entry-panel" aria-labelledby="formTitle" data-admin-only>
+          <div class="panel-heading">
+            <div>
+              <p class="section-kicker">户口录入</p>
+              <h2 id="formTitle">新增小猫档案</h2>
+            </div>
+            <button class="icon-button" type="button" id="clearBtn" title="清空表单" aria-label="清空表单">
+              <span class="icon" data-icon="eraser" aria-hidden="true"></span>
+            </button>
+          </div>
+
+          <form id="catForm" class="cat-form">
+            <input type="hidden" name="id" id="catId" />
+            <input type="hidden" name="photoData" id="photoData" />
+
+            <label class="field full">
+              <span>户口编号</span>
+              <input type="text" id="registryPreview" value="自动生成" readonly />
+            </label>
+
+            <section class="photo-field full" aria-labelledby="photoFieldTitle">
+              <div class="photo-preview empty" id="photoPreview" aria-hidden="true">
+                <span class="photo-placeholder">暂无照片</span>
+              </div>
+              <div class="photo-controls">
+                <span id="photoFieldTitle">小猫照片</span>
+                <div class="photo-actions">
+                  <label class="secondary-button photo-upload-button">
+                    <span class="icon" data-icon="upload" aria-hidden="true"></span>
+                    <span>选择照片</span>
+                    <input type="file" id="photoInput" accept="image/*" />
+                  </label>
+                  <button class="text-button" type="button" id="removePhotoBtn" hidden>移除照片</button>
+                </div>
+              </div>
+            </section>
+
+            <label class="field">
+              <span>姓名</span>
+              <input type="text" name="name" placeholder="如：小橘" required maxlength="20" />
+            </label>
+
+            <label class="field">
+              <span>性别</span>
+              <select name="gender" required>
+                <option value="未知">未知</option>
+                <option value="公">公</option>
+                <option value="母">母</option>
+              </select>
+            </label>
+
+            <label class="field">
+              <span>毛色特征</span>
+              <input type="text" name="coat" placeholder="橘白、狸花、黑猫" required maxlength="32" />
+            </label>
+
+            <label class="field">
+              <span>年龄阶段</span>
+              <select name="age">
+                <option value="幼猫">幼猫</option>
+                <option value="青年猫">青年猫</option>
+                <option value="成猫" selected>成猫</option>
+                <option value="老年猫">老年猫</option>
+                <option value="未知">未知</option>
+              </select>
+            </label>
+
+            <label class="field">
+              <span>活动区域</span>
+              <select name="campusArea" required>
+                <option value="图书馆周边">图书馆周边</option>
+                <option value="食堂周边">食堂周边</option>
+                <option value="宿舍区">宿舍区</option>
+                <option value="教学楼">教学楼</option>
+                <option value="体育馆">体育馆</option>
+                <option value="湖畔步道">湖畔步道</option>
+                <option value="校门附近">校门附近</option>
+                <option value="其他">其他</option>
+              </select>
+            </label>
+
+            <label class="field">
+              <span>固定点位</span>
+              <input type="text" name="location" placeholder="如：图书馆东侧台阶" maxlength="48" />
+            </label>
+
+            <label class="field">
+              <span>当前状态</span>
+              <select name="status">
+                <option value="常驻">常驻</option>
+                <option value="偶遇">偶遇</option>
+                <option value="医疗观察">医疗观察</option>
+                <option value="待领养">待领养</option>
+                <option value="已领养">已领养</option>
+                <option value="失踪">失踪</option>
+              </select>
+            </label>
+
+            <label class="field">
+              <span>绝育情况</span>
+              <select name="sterilized">
+                <option value="未知">未知</option>
+                <option value="已绝育">已绝育</option>
+                <option value="未绝育">未绝育</option>
+              </select>
+            </label>
+
+            <label class="field">
+              <span>疫苗情况</span>
+              <select name="vaccinated">
+                <option value="未知">未知</option>
+                <option value="已疫苗">已疫苗</option>
+                <option value="未疫苗">未疫苗</option>
+              </select>
+            </label>
+
+            <label class="field">
+              <span>联系人</span>
+              <input type="text" name="caretaker" placeholder="姓名或社团" maxlength="24" />
+            </label>
+
+            <label class="field full">
+              <span>性格与备注</span>
+              <textarea name="notes" placeholder="亲人程度、喂食偏好、健康提醒等" rows="4" maxlength="240"></textarea>
+            </label>
+
+            <div class="form-actions">
+              <button class="primary-button" type="submit">
+                <span class="icon" data-icon="save" aria-hidden="true"></span>
+                <span id="submitText">保存档案</span>
+              </button>
+              <button class="secondary-button" type="button" id="cancelEditBtn" hidden>取消编辑</button>
+            </div>
+          </form>
+        </aside>
+
+        <section class="records-panel" aria-labelledby="recordsTitle">
+          <div class="readonly-notice" id="readonlyNotice" hidden>
+            <span class="icon" data-icon="lock" aria-hidden="true"></span>
+            <span>当前为只读访问，只有管理员可以新增、编辑或删除档案。</span>
+          </div>
+
+          <div class="records-heading">
+            <div>
+              <p class="section-kicker">档案库</p>
+              <h2 id="recordsTitle">校园小猫户口册</h2>
+            </div>
+            <button class="primary-button compact" type="button" id="newRecordBtn" data-admin-only>
+              <span class="icon" data-icon="plus" aria-hidden="true"></span>
+              <span>新增</span>
+            </button>
+          </div>
+
+          <div class="filters" role="search">
+            <label class="search-field">
+              <span class="icon" data-icon="search" aria-hidden="true"></span>
+              <input type="search" id="searchInput" placeholder="搜索姓名、编号、毛色、点位、联系人" />
+            </label>
+
+            <label class="select-filter">
+              <span>区域</span>
+              <select id="areaFilter">
+                <option value="all">全部区域</option>
+              </select>
+            </label>
+
+            <label class="select-filter">
+              <span>状态</span>
+              <select id="statusFilter">
+                <option value="all">全部状态</option>
+                <option value="常驻">常驻</option>
+                <option value="偶遇">偶遇</option>
+                <option value="医疗观察">医疗观察</option>
+                <option value="待领养">待领养</option>
+                <option value="已领养">已领养</option>
+                <option value="失踪">失踪</option>
+              </select>
+            </label>
+
+            <label class="select-filter">
+              <span>护理</span>
+              <select id="careFilter">
+                <option value="all">全部护理</option>
+                <option value="已绝育">已绝育</option>
+                <option value="未绝育">未绝育</option>
+                <option value="已疫苗">已疫苗</option>
+                <option value="未疫苗">未疫苗</option>
+              </select>
+            </label>
+          </div>
+
+          <div class="result-meta">
+            <span id="resultText">显示 0 条档案</span>
+            <button class="text-button" type="button" id="clearFiltersBtn">清除筛选</button>
+          </div>
+
+          <div class="cat-grid" id="catGrid" aria-live="polite"></div>
+
+          <div class="empty-state" id="emptyState" hidden>
+            <p>还没有匹配的小猫档案。</p>
+            <button class="secondary-button" type="button" id="emptyAddBtn" data-admin-only>去录入第一只</button>
+          </div>
+        </section>
+      </main>
+
+      <section class="detail-shell" id="detailShell" aria-hidden="true" hidden>
+        <div class="detail-backdrop" data-detail-close></div>
+        <article class="detail-page" id="detailPage" role="dialog" aria-modal="true" aria-labelledby="detailName">
+          <button class="detail-close" type="button" data-detail-close title="关闭详情" aria-label="关闭详情">
+            <span class="icon" data-icon="x" aria-hidden="true"></span>
+          </button>
+          <div id="detailContent"></div>
+        </article>
+      </section>
+
+      <section class="admin-shell" id="adminShell" aria-hidden="true" hidden>
+        <div class="admin-backdrop" data-admin-close></div>
+        <article class="admin-panel" role="dialog" aria-modal="true" aria-labelledby="adminTitle">
+          <header class="admin-heading">
+            <div>
+              <p class="section-kicker">管理员控制台</p>
+              <h2 id="adminTitle">网站访问统计</h2>
+            </div>
+            <div class="admin-heading-actions">
+              <button class="icon-button" type="button" id="refreshAdminBtn" title="刷新统计" aria-label="刷新统计">
+                <span class="icon" data-icon="refresh" aria-hidden="true"></span>
+              </button>
+              <button class="icon-button" type="button" data-admin-close title="关闭统计" aria-label="关闭统计">
+                <span class="icon" data-icon="x" aria-hidden="true"></span>
+              </button>
+            </div>
+          </header>
+
+          <div class="admin-body">
+            <div class="admin-metrics" id="adminMetrics"></div>
+
+            <section class="admin-section">
+              <div class="admin-section-heading">
+                <h3>访问人员</h3>
+                <span id="visitorCountText"></span>
+              </div>
+              <div class="table-wrap">
+                <table class="admin-table">
+                  <thead>
+                    <tr>
+                      <th>身份</th>
+                      <th>学号</th>
+                      <th>姓名</th>
+                      <th>登录次数</th>
+                      <th>页面访问</th>
+                      <th>最近访问</th>
+                      <th>最近 IP</th>
+                    </tr>
+                  </thead>
+                  <tbody id="visitorTableBody"></tbody>
+                </table>
+              </div>
+            </section>
+
+            <section class="admin-section">
+              <div class="admin-section-heading">
+                <h3>最近访问与操作</h3>
+                <span>最多显示 300 条</span>
+              </div>
+              <div class="table-wrap">
+                <table class="admin-table">
+                  <thead>
+                    <tr>
+                      <th>时间</th>
+                      <th>人员</th>
+                      <th>动作</th>
+                      <th>目标</th>
+                      <th>IP</th>
+                    </tr>
+                  </thead>
+                  <tbody id="logTableBody"></tbody>
+                </table>
+              </div>
+            </section>
+          </div>
+        </article>
+      </section>
+
+      <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+    </div>
+
+    <script src="./app.js"></script>
+  </body>
+</html>

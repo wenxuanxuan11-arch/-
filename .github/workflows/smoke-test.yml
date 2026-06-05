@@ -1,0 +1,56 @@
+name: Smoke Test
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  smoke-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Check Python syntax
+        run: python -m py_compile server.py
+
+      - name: Start server
+        run: |
+          mkdir -p data
+          ADMIN_STUDENT_ID=240520230 ADMIN_NAME=宣文轩 DATA_DIR="$PWD/data" python server.py &
+          echo $! > server.pid
+          for i in {1..20}; do
+            curl -fsS http://127.0.0.1:8080/api/health && exit 0
+            sleep 1
+          done
+          exit 1
+
+      - name: Verify auth and permissions
+        run: |
+          cookie="$(mktemp)"
+          curl -fsS -c "$cookie" -H 'Content-Type: application/json' \
+            -d '{"studentId":"202600001","name":"普通同学"}' \
+            http://127.0.0.1:8080/api/login
+          code="$(curl -sS -o /tmp/viewer-create.json -w '%{http_code}' -b "$cookie" \
+            -H 'Content-Type: application/json' \
+            -d '{"name":"权限测试","coat":"灰白","gender":"未知","age":"成猫","campusArea":"教学楼","location":"测试点","status":"常驻","sterilized":"未知","vaccinated":"未知","caretaker":"","notes":"","photoData":""}' \
+            http://127.0.0.1:8080/api/cats)"
+          test "$code" = "403"
+
+          admin_cookie="$(mktemp)"
+          curl -fsS -c "$admin_cookie" -H 'Content-Type: application/json' \
+            -d '{"studentId":"240520230","name":"宣文轩"}' \
+            http://127.0.0.1:8080/api/login
+          curl -fsS -b "$admin_cookie" http://127.0.0.1:8080/api/admin/stats
+
+      - name: Stop server
+        if: always()
+        run: |
+          if [ -f server.pid ]; then kill "$(cat server.pid)" || true; fi

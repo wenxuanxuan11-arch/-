@@ -1,0 +1,20 @@
+services:
+  - type: web
+    name: wanjiang-cat-registry
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    envVars:
+      - key: ADMIN_STUDENT_ID
+        sync: false
+      - key: ADMIN_NAME
+        sync: false
+      - key: SESSION_DAYS
+        value: "7"
+      - key: DATA_DIR
+        value: /data
+      - key: TZ
+        value: Asia/Shanghai
+    disk:
+      name: wanjiang-cat-data
+      mountPath: /data
+      sizeGB: 1
