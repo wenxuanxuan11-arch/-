@@ -17,7 +17,13 @@ DATA_DIR=/data
 
 仓库内已提供 `render.yaml`。在 Render 创建 Blueprint 或 Web Service，连接 GitHub 仓库后使用 Docker 部署。
 
-需要注意：SQLite 数据库必须挂载持久磁盘到 `/data`，否则服务重启后数据会丢失。
+一键接入链接：
+
+```text
+https://render.com/deploy?repo=https%3A%2F%2Fgithub.com%2Fwenxuanxuan11-arch%2F-.git
+```
+
+需要注意：SQLite 数据库必须挂载持久磁盘到 `/data`，否则服务重启后数据会丢失。Render 的免费 Web Service 不支持持久磁盘；如果要长期保存档案、访问人员和访问日志，需要选择支持 Persistent Disk 的付费实例。只做演示可以先不挂持久磁盘，但每次重启或重新部署后数据可能重置。
 
 ## Railway
 

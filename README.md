@@ -40,6 +40,10 @@ docker compose up -d
 DEPLOYMENT.md
 ```
 
+Render 一键接入：
+
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https%3A%2F%2Fgithub.com%2Fwenxuanxuan11-arch%2F-.git)
+
 仓库里已经准备了：
 
 ```text
