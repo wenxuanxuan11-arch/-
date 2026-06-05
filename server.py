@@ -44,7 +44,7 @@ STATUS_OPTIONS = {"常驻", "偶遇", "医疗观察", "待领养", "已领养", 
 STERILIZED_OPTIONS = {"未知", "已绝育", "未绝育"}
 VACCINATED_OPTIONS = {"未知", "已疫苗", "未疫苗"}
 SAFE_PHOTO_RE = re.compile(r"^data:image/(jpeg|jpg|png|webp);base64,", re.IGNORECASE)
-STUDENT_ID_RE = re.compile(r"^[A-Za-z0-9_-]{3,32}$")
+STUDENT_ID_RE = re.compile(r"^\d{9}$")
 
 
 SAMPLE_CATS = [
@@ -581,10 +581,10 @@ class RegistryHandler(BaseHTTPRequestHandler):
 
     def handle_login(self):
         data = self.read_json()
-        student_id = clean_text(data.get("studentId"), 32, True, "学号")
+        student_id = clean_text(data.get("studentId"), 9, True, "学号")
         name = clean_text(data.get("name"), 32, True, "姓名")
         if not STUDENT_ID_RE.fullmatch(student_id):
-            raise ValueError("学号仅支持字母、数字、下划线和短横线")
+            raise ValueError("学号必须为 9 位数字")
 
         role = "admin" if student_id == ADMIN_STUDENT_ID and name == ADMIN_NAME else "viewer"
         user = {"studentId": student_id, "name": name, "role": role}

@@ -21,12 +21,12 @@
 
         <div class="login-copy">
           <p class="eyebrow">校园地标档案库</p>
-          <p>请输入学号和姓名进入系统。普通用户可以查看小猫档案，管理员可以维护档案并查看访问统计。</p>
+          <p>请输入 9 位学号和姓名进入系统。普通用户可以查看小猫档案，管理员可以维护档案并查看访问统计。</p>
         </div>
 
         <label class="login-field">
           <span>学号</span>
-          <input id="loginStudentId" name="studentId" type="text" inputmode="numeric" autocomplete="username" required maxlength="32" />
+          <input id="loginStudentId" name="studentId" type="text" inputmode="numeric" autocomplete="username" required minlength="9" maxlength="9" pattern="\d{9}" title="请输入 9 位数字学号" placeholder="9 位数字学号" />
         </label>
 
         <label class="login-field">

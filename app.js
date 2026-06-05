@@ -160,15 +160,28 @@ async function bootstrap() {
 async function handleLogin(event) {
   event.preventDefault();
   setLoginError();
+  const data = Object.fromEntries(new FormData(loginForm));
+  const studentId = data.studentId.trim();
+  const name = data.name.trim();
+  if (!/^\d{9}$/.test(studentId)) {
+    setLoginError("学号必须为 9 位数字。");
+    document.querySelector("#loginStudentId").focus();
+    return;
+  }
+  if (!name) {
+    setLoginError("请输入姓名。");
+    document.querySelector("#loginName").focus();
+    return;
+  }
+
   loginButton.disabled = true;
   loginButton.querySelector("span:last-child").textContent = "正在进入";
   try {
-    const data = Object.fromEntries(new FormData(loginForm));
     const payload = await api("/api/login", {
       method: "POST",
       body: {
-        studentId: data.studentId.trim(),
-        name: data.name.trim(),
+        studentId,
+        name,
       },
     });
     loginForm.reset();
@@ -180,6 +193,10 @@ async function handleLogin(event) {
     loginButton.querySelector("span:last-child").textContent = "进入系统";
   }
 }
+
+document.querySelector("#loginStudentId").addEventListener("input", (event) => {
+  event.target.value = event.target.value.replace(/\D/g, "").slice(0, 9);
+});
 
 async function handleLogout() {
   try {
