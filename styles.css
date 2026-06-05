@@ -464,6 +464,202 @@ h2 {
   padding: 22px;
 }
 
+.share-panel {
+  position: relative;
+  z-index: 2;
+  display: grid;
+  grid-column: 1 / -1;
+  gap: 16px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 22px;
+  background:
+    linear-gradient(90deg, rgba(47, 111, 94, 0.06) 1px, transparent 1px),
+    linear-gradient(180deg, rgba(47, 111, 94, 0.06) 1px, transparent 1px),
+    #fffdf7;
+  background-size: 28px 28px;
+  box-shadow: var(--shadow);
+}
+
+.share-heading,
+.note-toolbar,
+.sticky-note footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.share-count {
+  display: inline-flex;
+  min-height: 32px;
+  align-items: center;
+  border: 1px solid #d8c9a9;
+  border-radius: 8px;
+  padding: 0 10px;
+  color: #6d5730;
+  background: #fff7df;
+  font-size: 13px;
+  font-weight: 750;
+}
+
+.note-form {
+  display: grid;
+  grid-template-columns: minmax(260px, 1fr) auto;
+  gap: 14px;
+  align-items: end;
+  border: 1px solid #e5d8ba;
+  border-radius: 8px;
+  padding: 14px;
+  background: rgba(255, 255, 255, 0.78);
+}
+
+.note-input,
+.note-tone-field {
+  display: grid;
+  gap: 7px;
+}
+
+.note-input span,
+.note-tone-field span {
+  color: #4d4231;
+  font-size: 13px;
+  font-weight: 750;
+}
+
+.note-input textarea {
+  min-height: 86px;
+  background: #fffefa;
+}
+
+.note-toolbar {
+  align-items: end;
+}
+
+.note-tone-field {
+  min-width: 104px;
+}
+
+.note-board {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+  gap: 18px;
+  min-height: 160px;
+  border: 1px dashed #d8c9a9;
+  border-radius: 8px;
+  padding: 18px;
+  background: rgba(255, 250, 238, 0.62);
+}
+
+.sticky-note {
+  position: relative;
+  display: grid;
+  min-height: 170px;
+  align-content: space-between;
+  gap: 18px;
+  border-radius: 4px 8px 4px 8px;
+  padding: 18px 16px 14px;
+  color: #2f302d;
+  box-shadow: 0 12px 22px rgba(79, 61, 29, 0.16);
+  transform: rotate(var(--tilt));
+  transition: transform 220ms var(--motion-soft), box-shadow 220ms var(--motion-soft);
+}
+
+.sticky-note:hover {
+  transform: rotate(0deg) translateY(-3px);
+  box-shadow: 0 18px 28px rgba(79, 61, 29, 0.2);
+}
+
+.sticky-note::before {
+  content: "";
+  position: absolute;
+  top: 8px;
+  left: 50%;
+  width: 48px;
+  height: 12px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.48);
+  box-shadow: 0 2px 5px rgba(87, 66, 24, 0.12);
+  transform: translateX(-50%);
+}
+
+.sticky-note p {
+  margin: 8px 0 0;
+  overflow-wrap: anywhere;
+  font-size: 15px;
+  line-height: 1.75;
+}
+
+.sticky-note footer {
+  align-items: flex-end;
+  color: rgba(38, 42, 36, 0.68);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.sticky-note footer span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.note-delete {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  display: inline-flex;
+  width: 28px;
+  height: 28px;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 999px;
+  color: rgba(35, 39, 33, 0.62);
+  background: rgba(255, 255, 255, 0.45);
+  cursor: pointer;
+}
+
+.note-delete:hover {
+  color: #9b402c;
+  background: rgba(255, 255, 255, 0.72);
+}
+
+.note-delete svg {
+  width: 15px;
+  height: 15px;
+  stroke: currentColor;
+  stroke-width: 2.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  fill: none;
+}
+
+.tone-paper {
+  background: #fff4c7;
+}
+
+.tone-leaf {
+  background: #dff1d8;
+}
+
+.tone-sun {
+  background: #ffe29a;
+}
+
+.tone-sky {
+  background: #dceffd;
+}
+
+.tone-rose {
+  background: #f8d9dc;
+}
+
+.note-empty {
+  min-height: 120px;
+  background: rgba(255, 255, 255, 0.68);
+}
+
 .readonly-notice {
   display: flex;
   margin-bottom: 18px;
@@ -1382,6 +1578,14 @@ input[readonly] {
     min-height: 320px;
   }
 
+  .note-form {
+    grid-template-columns: 1fr;
+  }
+
+  .note-toolbar {
+    justify-content: flex-start;
+  }
+
   .admin-metrics {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
@@ -1448,6 +1652,30 @@ input[readonly] {
 
   .cat-grid {
     grid-template-columns: 1fr;
+  }
+
+  .share-panel {
+    padding: 18px;
+  }
+
+  .share-heading,
+  .note-toolbar {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .note-toolbar .primary-button,
+  .note-tone-field {
+    width: 100%;
+  }
+
+  .note-board {
+    grid-template-columns: 1fr;
+    padding: 14px;
+  }
+
+  .sticky-note {
+    transform: none;
   }
 
   .detail-shell {

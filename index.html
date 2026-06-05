@@ -318,6 +318,45 @@
             <button class="secondary-button" type="button" id="emptyAddBtn" data-admin-only>去录入第一只</button>
           </div>
         </section>
+
+        <section class="share-panel" aria-labelledby="shareTitle">
+          <div class="share-heading">
+            <div>
+              <p class="section-kicker">留言与分享圈</p>
+              <h2 id="shareTitle">校园便签展板</h2>
+            </div>
+            <span class="share-count" id="notesCountText">0 张便签</span>
+          </div>
+
+          <form class="note-form" id="noteForm">
+            <label class="note-input">
+              <span>贴一张便签</span>
+              <textarea id="noteContent" name="content" rows="3" maxlength="220" required placeholder="可以写小猫近况、偶遇提醒、喂水点、领养意向或校园随手分享"></textarea>
+            </label>
+            <div class="note-toolbar">
+              <label class="note-tone-field">
+                <span>颜色</span>
+                <select id="noteTone" name="tone">
+                  <option value="paper">米白</option>
+                  <option value="leaf">叶绿</option>
+                  <option value="sun">暖黄</option>
+                  <option value="sky">湖蓝</option>
+                  <option value="rose">浅粉</option>
+                </select>
+              </label>
+              <button class="primary-button" type="submit">
+                <span class="icon" data-icon="pin" aria-hidden="true"></span>
+                <span>贴到展板</span>
+              </button>
+            </div>
+          </form>
+
+          <div class="note-board" id="noteBoard" aria-live="polite"></div>
+
+          <div class="empty-state note-empty" id="emptyNotes" hidden>
+            <p>展板还空着，来贴第一张便签吧。</p>
+          </div>
+        </section>
       </main>
 
       <section class="detail-shell" id="detailShell" aria-hidden="true" hidden>

@@ -10,6 +10,7 @@ const areaOptions = [
 ];
 
 let cats = [];
+let notes = [];
 let currentUser = null;
 let editingId = null;
 let activeDetailId = null;
@@ -33,6 +34,12 @@ const campusAreaSuggestions = document.querySelector("#campusAreaSuggestions");
 const statusFilter = document.querySelector("#statusFilter");
 const careFilter = document.querySelector("#careFilter");
 const resultText = document.querySelector("#resultText");
+const noteForm = document.querySelector("#noteForm");
+const noteContent = document.querySelector("#noteContent");
+const noteTone = document.querySelector("#noteTone");
+const noteBoard = document.querySelector("#noteBoard");
+const emptyNotes = document.querySelector("#emptyNotes");
+const notesCountText = document.querySelector("#notesCountText");
 const registryPreview = document.querySelector("#registryPreview");
 const submitText = document.querySelector("#submitText");
 const cancelEditBtn = document.querySelector("#cancelEditBtn");
@@ -67,6 +74,7 @@ const icons = {
   logout: '<svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5"/><path d="M21 12H9"/></svg>',
   chart: '<svg viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M7 16v-4"/><path d="M12 16V8"/><path d="M17 16V5"/></svg>',
   lock: '<svg viewBox="0 0 24 24"><rect width="18" height="11" x="3" y="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>',
+  pin: '<svg viewBox="0 0 24 24"><path d="M12 17v5"/><path d="m5 9 4-4 10 10-4 4z"/><path d="m9 5 2-2 10 10-2 2"/></svg>',
 };
 
 document.querySelectorAll("[data-icon]").forEach((node) => {
@@ -120,6 +128,7 @@ function setLoginError(message = "") {
 function showLogin(message = "") {
   currentUser = null;
   cats = [];
+  notes = [];
   window.clearInterval(heartbeatTimer);
   heartbeatTimer = null;
   closeDetail({ restoreFocus: false });
@@ -143,6 +152,7 @@ async function enterApp(user) {
   });
   resetForm();
   await loadCats();
+  await loadNotes();
   window.clearInterval(heartbeatTimer);
   heartbeatTimer = window.setInterval(() => {
     api("/api/heartbeat", { method: "POST" }).catch(() => {});
@@ -212,6 +222,12 @@ async function loadCats() {
   const payload = await api("/api/cats");
   cats = payload.cats || [];
   render();
+}
+
+async function loadNotes() {
+  const payload = await api("/api/notes");
+  notes = payload.notes || [];
+  renderNotes();
 }
 
 function fillAreaFilter() {
@@ -488,6 +504,19 @@ function formatDate(value) {
   }).format(date);
 }
 
+function formatShortDate(value) {
+  if (!value) return "刚刚";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "刚刚";
+  return new Intl.DateTimeFormat("zh-CN", {
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  }).format(date);
+}
+
 function detailItem(label, value, full = false) {
   return `
     <section class="detail-item${full ? " full" : ""}">
@@ -685,6 +714,88 @@ function render() {
   renderStats();
 }
 
+function canDeleteNote(note) {
+  return isAdmin() || note.authorStudentId === currentUser?.studentId;
+}
+
+function noteTilt(note) {
+  const source = note.id || note.content || "";
+  const sum = [...source].reduce((total, char) => total + char.charCodeAt(0), 0);
+  return [-2, 1.5, -0.8, 2.2, -1.4, 0.7][sum % 6];
+}
+
+function noteHtml(note) {
+  const deleteButton = canDeleteNote(note)
+    ? `
+      <button class="note-delete" type="button" data-note-action="delete" data-id="${escapeHtml(note.id)}" title="删除便签" aria-label="删除便签">
+        ${icons.x}
+      </button>
+    `
+    : "";
+
+  return `
+    <article class="sticky-note tone-${escapeHtml(note.tone || "paper")}" style="--tilt:${noteTilt(note)}deg">
+      ${deleteButton}
+      <p>${escapeHtml(note.content)}</p>
+      <footer>
+        <span>${escapeHtml(note.authorName)} · ${escapeHtml(note.authorStudentId)}</span>
+        <time datetime="${escapeHtml(note.createdAt)}">${escapeHtml(formatShortDate(note.createdAt))}</time>
+      </footer>
+    </article>
+  `;
+}
+
+function renderNotes() {
+  notesCountText.textContent = `${notes.length} 张便签`;
+  noteBoard.innerHTML = notes.map(noteHtml).join("");
+  emptyNotes.hidden = notes.length > 0;
+}
+
+async function createNote(event) {
+  event.preventDefault();
+  const content = noteContent.value.trim();
+  if (!content) {
+    showToast("先写一点内容再贴到展板。", "error");
+    noteContent.focus();
+    return;
+  }
+
+  const submitButton = noteForm.querySelector("button[type='submit']");
+  submitButton.disabled = true;
+  try {
+    const payload = await api("/api/notes", {
+      method: "POST",
+      body: {
+        content,
+        tone: noteTone.value,
+      },
+    });
+    notes = [payload.note, ...notes].filter(Boolean);
+    noteForm.reset();
+    renderNotes();
+    showToast("便签已贴到展板");
+  } catch (error) {
+    showToast(error.message, "error");
+  } finally {
+    submitButton.disabled = false;
+  }
+}
+
+async function deleteNote(id) {
+  const note = notes.find((item) => item.id === id);
+  if (!note || !canDeleteNote(note)) return;
+  if (!confirm("确定删除这张便签吗？")) return;
+
+  try {
+    await api(`/api/notes/${encodeURIComponent(id)}`, { method: "DELETE" });
+    notes = notes.filter((item) => item.id !== id);
+    renderNotes();
+    showToast("便签已删除");
+  } catch (error) {
+    showToast(error.message, "error");
+  }
+}
+
 function clearFilters() {
   searchInput.value = "";
   areaFilter.value = "all";
@@ -757,6 +868,8 @@ function actionLabel(action) {
     delete_cat: "删除小猫档案",
     import_cats: "导入档案",
     restore_samples: "恢复示例档案",
+    create_note: "发布便签",
+    delete_note: "删除便签",
   };
   return labels[action] || action;
 }
@@ -871,6 +984,7 @@ function closeAdmin() {
 loginForm.addEventListener("submit", handleLogin);
 document.querySelector("#logoutBtn").addEventListener("click", handleLogout);
 form.addEventListener("submit", saveCat);
+noteForm.addEventListener("submit", createNote);
 document.querySelector("#clearBtn").addEventListener("click", resetForm);
 document.querySelector("#cancelEditBtn").addEventListener("click", resetForm);
 photoInput.addEventListener("change", handlePhotoChange);
@@ -914,6 +1028,12 @@ grid.addEventListener("click", (event) => {
 
   const card = event.target.closest(".cat-card");
   if (card) openDetail(card.dataset.id, card);
+});
+
+noteBoard.addEventListener("click", (event) => {
+  const button = event.target.closest("[data-note-action]");
+  if (!button) return;
+  if (button.dataset.noteAction === "delete") deleteNote(button.dataset.id);
 });
 
 detailShell.addEventListener("click", (event) => {

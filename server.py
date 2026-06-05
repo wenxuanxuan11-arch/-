@@ -45,6 +45,7 @@ STERILIZED_OPTIONS = {"未知", "已绝育", "未绝育"}
 VACCINATED_OPTIONS = {"未知", "已疫苗", "未疫苗"}
 SAFE_PHOTO_RE = re.compile(r"^data:image/(jpeg|jpg|png|webp);base64,", re.IGNORECASE)
 STUDENT_ID_RE = re.compile(r"^\d{9}$")
+NOTE_TONES = {"leaf", "sun", "sky", "rose", "paper"}
 
 
 SAMPLE_CATS = [
@@ -217,6 +218,15 @@ def init_db():
                 created_at TEXT NOT NULL
             );
 
+            CREATE TABLE IF NOT EXISTS notes (
+                id TEXT PRIMARY KEY,
+                content TEXT NOT NULL,
+                tone TEXT NOT NULL DEFAULT 'paper',
+                author_student_id TEXT NOT NULL,
+                author_name TEXT NOT NULL,
+                created_at TEXT NOT NULL
+            );
+
             CREATE INDEX IF NOT EXISTS idx_access_logs_created_at
             ON access_logs(created_at DESC);
 
@@ -225,6 +235,9 @@ def init_db():
 
             CREATE INDEX IF NOT EXISTS idx_sessions_expires_at
             ON sessions(expires_at);
+
+            CREATE INDEX IF NOT EXISTS idx_notes_created_at
+            ON notes(created_at DESC);
             """
         )
 
@@ -355,6 +368,37 @@ def cat_from_row(row):
 def list_cats(db):
     rows = db.execute("SELECT * FROM cats ORDER BY updated_at DESC, registry_no ASC").fetchall()
     return [cat_from_row(row) for row in rows]
+
+
+def normalize_note(data):
+    content = clean_text(data.get("content"), 220, True, "便签内容")
+    tone = clean_text(data.get("tone"), 16) or "paper"
+    if tone not in NOTE_TONES:
+        tone = "paper"
+    return {"content": content, "tone": tone}
+
+
+def note_from_row(row):
+    return {
+        "id": row["id"],
+        "content": row["content"],
+        "tone": row["tone"],
+        "authorStudentId": row["author_student_id"],
+        "authorName": row["author_name"],
+        "createdAt": row["created_at"],
+    }
+
+
+def list_notes(db):
+    rows = db.execute(
+        """
+        SELECT id, content, tone, author_student_id, author_name, created_at
+        FROM notes
+        ORDER BY created_at DESC
+        LIMIT 200
+        """
+    ).fetchall()
+    return [note_from_row(row) for row in rows]
 
 
 def record_log(db, action, path="", user=None, ip="", user_agent=""):
@@ -522,6 +566,9 @@ class RegistryHandler(BaseHTTPRequestHandler):
             if path == "/api/cats":
                 self.handle_list_cats()
                 return
+            if path == "/api/notes":
+                self.handle_list_notes()
+                return
             if path == "/api/admin/stats":
                 self.handle_admin_stats()
                 return
@@ -549,6 +596,9 @@ class RegistryHandler(BaseHTTPRequestHandler):
                 return
             if path == "/api/cats":
                 self.handle_create_cat()
+                return
+            if path == "/api/notes":
+                self.handle_create_note()
                 return
             if path == "/api/admin/import":
                 self.handle_import()
@@ -586,6 +636,10 @@ class RegistryHandler(BaseHTTPRequestHandler):
             match = re.fullmatch(r"/api/cats/([^/]+)", path)
             if match:
                 self.handle_delete_cat(unquote(match.group(1)))
+                return
+            match = re.fullmatch(r"/api/notes/([^/]+)", path)
+            if match:
+                self.handle_delete_note(unquote(match.group(1)))
                 return
             self.send_error_json(HTTPStatus.NOT_FOUND, "接口不存在")
         except Exception as error:
@@ -678,6 +732,35 @@ class RegistryHandler(BaseHTTPRequestHandler):
             cats = list_cats(db)
         self.send_json(HTTPStatus.OK, {"cats": cats})
 
+    def handle_list_notes(self):
+        user = self.require_user()
+        if not user:
+            return
+        with db_connect() as db:
+            notes = list_notes(db)
+        self.send_json(HTTPStatus.OK, {"notes": notes})
+
+    def handle_create_note(self):
+        user = self.require_user()
+        if not user:
+            return
+        data = self.read_json()
+        note = normalize_note(data)
+        note_id = str(uuid.uuid4())
+        created_at = iso_now()
+        with db_connect() as db:
+            db.execute(
+                """
+                INSERT INTO notes (
+                    id, content, tone, author_student_id, author_name, created_at
+                ) VALUES (?, ?, ?, ?, ?, ?)
+                """,
+                (note_id, note["content"], note["tone"], user["studentId"], user["name"], created_at),
+            )
+            row = db.execute("SELECT * FROM notes WHERE id = ?", (note_id,)).fetchone()
+            record_log(db, "create_note", note_id, user, self.client_ip(), self.user_agent())
+        self.send_json(HTTPStatus.CREATED, {"note": note_from_row(row)})
+
     def handle_create_cat(self):
         user = self.require_admin()
         if not user:
@@ -754,6 +837,25 @@ class RegistryHandler(BaseHTTPRequestHandler):
                 return
             db.execute("DELETE FROM cats WHERE id = ?", (cat_id,))
             record_log(db, "delete_cat", f"{cat_id}:{row['name']}", user, self.client_ip(), self.user_agent())
+        self.send_json(HTTPStatus.OK, {"ok": True})
+
+    def handle_delete_note(self, note_id):
+        user = self.require_user()
+        if not user:
+            return
+        with db_connect() as db:
+            row = db.execute(
+                "SELECT id, author_student_id, author_name FROM notes WHERE id = ?",
+                (note_id,),
+            ).fetchone()
+            if not row:
+                self.send_error_json(HTTPStatus.NOT_FOUND, "便签不存在")
+                return
+            if user["role"] != "admin" and row["author_student_id"] != user["studentId"]:
+                self.send_error_json(HTTPStatus.FORBIDDEN, "只能删除自己发布的便签")
+                return
+            db.execute("DELETE FROM notes WHERE id = ?", (note_id,))
+            record_log(db, "delete_note", f"{note_id}:{row['author_name']}", user, self.client_ip(), self.user_agent())
         self.send_json(HTTPStatus.OK, {"ok": True})
 
     def handle_import(self):
